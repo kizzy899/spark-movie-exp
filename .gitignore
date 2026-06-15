@@ -1,0 +1,29 @@
+ # Dependencies
+ node_modules/
+ .venv/
+ venv/
+ __pycache__/
+ *.pyc
+ *.pyo
+ 
+ # IDE
+ .idea/
+ .vscode/
+ *.swp
+ *.swo
+ 
+ # OS
+ .DS_Store
+ Thumbs.db
+ 
+ # Build output
+ build/
+ dist/
+ target/
+ .gradle/
+ 
+ # Logs
+ *.log
+ 
+ # Temp / extract
+ tmp-extract/
