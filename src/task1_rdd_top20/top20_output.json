@@ -1,0 +1,147 @@
+{
+  "task": "movie_top20",
+  "description": "平均评分最高的前20部电影",
+  "total_count": 20,
+  "top20": [
+    {
+      "rank": 1,
+      "movieId": 632,
+      "title": "Land and Freedom (Tierra y libertad) (1995)",
+      "avgRating": 4.64,
+      "ratingCount": 14
+    },
+    {
+      "rank": 2,
+      "movieId": 170705,
+      "title": "Band of Brothers (2001)",
+      "avgRating": 4.5,
+      "ratingCount": 13
+    },
+    {
+      "rank": 3,
+      "movieId": 84716,
+      "title": "Castaway on the Moon (Kimssi pyoryugi) (2009)",
+      "avgRating": 4.45,
+      "ratingCount": 10
+    },
+    {
+      "rank": 4,
+      "movieId": 25777,
+      "title": "Monkey Business (1931)",
+      "avgRating": 4.43,
+      "ratingCount": 14
+    },
+    {
+      "rank": 5,
+      "movieId": 159817,
+      "title": "Planet Earth (2006)",
+      "avgRating": 4.42,
+      "ratingCount": 31
+    },
+    {
+      "rank": 6,
+      "movieId": 8724,
+      "title": "\"Leopard",
+      "avgRating": 4.42,
+      "ratingCount": 12
+    },
+    {
+      "rank": 7,
+      "movieId": 318,
+      "title": "\"Shawshank Redemption",
+      "avgRating": 4.41,
+      "ratingCount": 3692
+    },
+    {
+      "rank": 8,
+      "movieId": 38304,
+      "title": "No Direction Home: Bob Dylan (2005)",
+      "avgRating": 4.4,
+      "ratingCount": 25
+    },
+    {
+      "rank": 9,
+      "movieId": 6123,
+      "title": "Sunless (Sans Soleil) (1983)",
+      "avgRating": 4.4,
+      "ratingCount": 10
+    },
+    {
+      "rank": 10,
+      "movieId": 6985,
+      "title": "\"Passion of Joan of Arc",
+      "avgRating": 4.35,
+      "ratingCount": 36
+    },
+    {
+      "rank": 11,
+      "movieId": 25805,
+      "title": "\"Atalante",
+      "avgRating": 4.34,
+      "ratingCount": 19
+    },
+    {
+      "rank": 12,
+      "movieId": 858,
+      "title": "\"Godfather",
+      "avgRating": 4.33,
+      "ratingCount": 2325
+    },
+    {
+      "rank": 13,
+      "movieId": 58425,
+      "title": "Heima (2007)",
+      "avgRating": 4.33,
+      "ratingCount": 12
+    },
+    {
+      "rank": 14,
+      "movieId": 148671,
+      "title": "Saw (2003)",
+      "avgRating": 4.33,
+      "ratingCount": 18
+    },
+    {
+      "rank": 15,
+      "movieId": 104069,
+      "title": "Louis C.K.: Oh My God (2013)",
+      "avgRating": 4.33,
+      "ratingCount": 32
+    },
+    {
+      "rank": 16,
+      "movieId": 138702,
+      "title": "Feast (2014)",
+      "avgRating": 4.33,
+      "ratingCount": 20
+    },
+    {
+      "rank": 17,
+      "movieId": 93040,
+      "title": "\"Civil War",
+      "avgRating": 4.32,
+      "ratingCount": 17
+    },
+    {
+      "rank": 18,
+      "movieId": 136449,
+      "title": "Ghost in the Shell 2.0 (2008)",
+      "avgRating": 4.32,
+      "ratingCount": 14
+    },
+    {
+      "rank": 19,
+      "movieId": 4783,
+      "title": "\"Endurance: Shackleton's Legendary Antarctic Expedition",
+      "avgRating": 4.32,
+      "ratingCount": 25
+    },
+    {
+      "rank": 20,
+      "movieId": 27033,
+      "title": "\"Kingdom II",
+      "avgRating": 4.32,
+      "ratingCount": 11
+    }
+  ]
+}

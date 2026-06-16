@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影数据分析 - Top20高分电影</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .stat-card { text-align: center; }
+        .stat-number { font-size: 28px; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 5px; }
+        .table-wrapper { padding: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead { background: #667eea; color: white; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        tbody tr:hover { background: #f5f5f5; }
+        .rank-1 { background: #ffd700; color: #333; font-weight: bold; }
+        .rank-2 { background: #c0c0c0; color: #333; font-weight: bold; }
+        .rank-3 { background: #cd7f32; color: white; font-weight: bold; }
+        .rating { color: #ff9800; font-weight: bold; }
+        .loading { text-align: center; padding: 50px; color: #666; }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 电影数据分析系统</h1>
+            <p>基于Spark RDD的电影评分Top20分析 | MovieLens数据集</p>
+        </div>
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCount">-</div>
+                <div class="stat-label">有效电影数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="minRating">-</div>
+                <div class="stat-label">最小评分人数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="updateTime">-</div>
+                <div class="stat-label">更新时间</div>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <div id="content" class="loading"><div class="spinner"></div>正在加载数据...</div>
+        </div>
+        <div class="footer">
+            <p>数据源: MovieLens Latest Dataset | 评分范围: 0.5-5.0 | 仅统计评分人数≥10的电影</p>
+        </div>
+    </div>
+    <script>
+        async function loadData() {
+            const contentDiv = document.getElementById('content');
+            try {
+                const response = await fetch('/api/top20');
+                const result = await response.json();
+                if (result.code === 200 && result.data) {
+                    const data = result.data;
+                    const top20 = data.top20;
+                    document.getElementById('stats').style.display = 'flex';
+                    document.getElementById('totalCount').textContent = top20.length;
+                    document.getElementById('minRating').textContent = '10';
+                    document.getElementById('updateTime').textContent = new Date().toLocaleString();
+                    let html = `<table><thead><tr><th>排名</th><th>电影名称</th><th>平均评分</th><th>评分人数</th></tr></thead><tbody>`;
+                    top20.forEach(m => {
+                        let rankClass = m.rank === 1 ? 'rank-1' : (m.rank === 2 ? 'rank-2' : (m.rank === 3 ? 'rank-3' : ''));
+                        html += `<tr><td class="${rankClass}">${m.rank}</td><td>${m.title}</td><td class="rating">⭐ ${m.avgRating}</td><td>${m.ratingCount.toLocaleString()}</td></tr>`;
+                    });
+                    html += `</tbody></table>`;
+                    contentDiv.innerHTML = html;
+                } else {
+                    throw new Error('数据格式错误');
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `<div style="color:red;text-align:center">加载失败: ${error.message}<br>请确保已运行: python task1_top20.py</div>`;
+            }
+        }
+        loadData();
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
