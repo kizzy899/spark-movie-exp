@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务一 - Top20 高分电影</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; background: #f4f7fb; color: #172033; }
+        header { padding: 24px 6%; color: #fff; background: #1f4e79; }
+        header a { color: #dce9f7; text-decoration: none; }
+        main { width: min(1120px, 94vw); margin: 24px auto; }
+        .panel { padding: 22px; border: 1px solid #d9e2ef; border-radius: 8px; background: #fff; }
+        .summary { display: flex; gap: 18px; margin-bottom: 18px; color: #536174; flex-wrap: wrap; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 12px 10px; border-bottom: 1px solid #e5ebf3; text-align: left; }
+        th { color: #fff; background: #1f4e79; }
+        tr:hover td { background: #f8fbff; }
+        .rank { width: 70px; font-weight: 700; color: #1f4e79; }
+        .rating { font-weight: 700; color: #b36b00; }
+        .message { padding: 18px; color: #536174; text-align: center; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/">返回首页</a>
+        <h1>任务一：电影评价平均分 Top20</h1>
+    </header>
+
+    <main>
+        <section class="panel">
+            <div class="summary">
+                <span>数据来源：Spark RDD 输出 JSON</span>
+                <span id="count">正在加载...</span>
+            </div>
+            <div id="content" class="message">正在加载任务一结果...</div>
+        </section>
+    </main>
+
+    <script>
+        async function loadTop20() {
+            const content = document.getElementById('content');
+            const count = document.getElementById('count');
+            try {
+                const response = await fetch('/api/top20');
+                const result = await response.json();
+                if (result.code !== 200) throw new Error(result.message || '接口返回异常');
+
+                const rows = result.data.top20 || [];
+                count.textContent = `共 ${rows.length} 条记录`;
+                content.className = '';
+                content.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>电影名称</th>
+                                <th>平均评分</th>
+                                <th>评分人数</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows.map(item => `
+                                <tr>
+                                    <td class="rank">${item.rank}</td>
+                                    <td>${item.title}</td>
+                                    <td class="rating">${item.avgRating}</td>
+                                    <td>${Number(item.ratingCount).toLocaleString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                count.textContent = '加载失败';
+                content.className = 'message';
+                content.textContent = `加载失败：${error.message}`;
+            }
+        }
+
+        loadTop20();
+    </script>
+</body>
+</html>
