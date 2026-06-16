@@ -1,29 +1,13 @@
- # Dependencies
- node_modules/
- .venv/
- venv/
- __pycache__/
- *.pyc
- *.pyo
- 
- # IDE
- .idea/
- .vscode/
- *.swp
- *.swo
- 
- # OS
- .DS_Store
- Thumbs.db
- 
- # Build output
- build/
- dist/
- target/
- .gradle/
- 
- # Logs
- *.log
- 
- # Temp / extract
- tmp-extract/
+*.csv
+*.zip
+.DS_Store
+__pycache__/
+*.pyc
+streaming-input/
+streaming-done/
+py_lib/
+py_deps.zip
+pymysql/
+pymysql-1.2.0.dist-info/
+test_py/
+/tmp/
