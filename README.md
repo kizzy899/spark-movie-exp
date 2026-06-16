@@ -191,6 +191,7 @@ src/task3_streaming/split_data.py
 src/task3_streaming/feed_data.py
 app.py
 templates/task3.html
+sql/schema.sql
 ```
 
 目标流程：
@@ -200,14 +201,37 @@ src/task3_streaming/split_data.py 切分 ratings.csv
         ↓
 src/task3_streaming/feed_data.py 分批投递评分文件
         ↓
-src/task3_streaming/streaming_job.py 监听目录并写入 MySQL
+src/task3_streaming/streaming_job.py 监听目录，累计统计并写入 MySQL
         ↓
 /api/latest 读取 streaming_results
         ↓
 /task3 折线图每 5 秒刷新
 ```
 
-任务三依赖 MySQL 数据库 `movie_analysis` 和表 `streaming_results`。运行前需要根据本机 MySQL 修改 `app.py` 和 `src/task3_streaming/streaming_job.py` 中的账号密码。
+任务三依赖 MySQL 数据库 `movie_analysis` 和表 `streaming_results`。运行前在 `.env` 中配置 MySQL 账号、数据目录和 Streaming 工作目录，不需要改代码里的账号密码。
+
+现在推荐在 `.env` 中配置 MySQL 和任务三目录，然后执行：
+
+```bash
+mysql -u root -p < sql/schema.sql
+make task3-clean
+make task3-split
+make task3-stream
+```
+
+另开一个终端投递评分批次：
+
+```bash
+make task3-feed
+```
+
+每次 `make task3-stream` 启动会生成一个 `run_id` 并写入 MySQL，`/api/latest` 只读取最新一次运行的数据，避免误开旧 Streaming 进程时把旧批次混进当前页面。
+
+页面访问：
+
+```text
+http://localhost:5001/task3
+```
 
 ## 数据说明
 

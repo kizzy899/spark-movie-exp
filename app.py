@@ -2,6 +2,7 @@ import json
 import os
 
 from flask import Flask, jsonify, render_template
+from pymysql.err import MySQLError
 
 app = Flask(__name__)
 
@@ -10,11 +11,11 @@ TASK1_OUTPUT_PATH = os.path.join(BASE_DIR, "src", "task1_rdd_top20", "top20_outp
 TASK2_OUTPUT_PATH = os.path.join(BASE_DIR, "outputs", "task2_gender_tags.json")
 
 MYSQL_CONFIG = {
-    "host": "127.0.0.1",
-    "port": 3306,
-    "user": "root",
-    "password": "123456",  # 改成你自己的数据库密码
-    "database": "movie_analysis",
+    "host": os.environ.get("MYSQL_HOST", "127.0.0.1"),
+    "port": int(os.environ.get("MYSQL_PORT", "3306")),
+    "user": os.environ.get("MYSQL_USER", "root"),
+    "password": os.environ.get("MYSQL_PASSWORD", "123456"),
+    "database": os.environ.get("MYSQL_DB", "movie_analysis"),
     "charset": "utf8mb4",
 }
 
@@ -81,28 +82,46 @@ def get_latest():
     """返回最近几个批次的Top5数据，供折线图使用。"""
     import pymysql
 
-    conn = pymysql.connect(**MYSQL_CONFIG)
+    try:
+        conn = pymysql.connect(**MYSQL_CONFIG)
+    except MySQLError as exc:
+        return jsonify({
+            "times": [],
+            "movies": {},
+            "error": f"MySQL连接失败: {exc}",
+        })
+
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
+                SELECT run_id
+                FROM streaming_results
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+            """)
+            latest_run = cursor.fetchone()
+            if not latest_run:
+                return jsonify({"times": [], "movies": {}})
+
+            run_id = latest_run[0]
+
+            cursor.execute("""
                 SELECT DISTINCT batch_time
                 FROM streaming_results
+                WHERE run_id = %s
                 ORDER BY batch_time DESC
                 LIMIT 8
-            """)
+            """, (run_id,))
             times = [row[0] for row in cursor.fetchall()]
             times.reverse()
-
-            if not times:
-                return jsonify({"times": [], "movies": {}})
 
             cursor.execute("""
                 SELECT movie_id, title
                 FROM streaming_results
-                WHERE batch_time = %s
+                WHERE run_id = %s AND batch_time = %s
                 ORDER BY avg_rating DESC
                 LIMIT 5
-            """, (times[-1],))
+            """, (run_id, times[-1]))
             top5 = cursor.fetchall()
             top5_ids = [row[0] for row in top5]
             top5_titles = {row[0]: row[1] for row in top5}
@@ -116,8 +135,8 @@ def get_latest():
                 cursor.execute("""
                     SELECT movie_id, avg_rating
                     FROM streaming_results
-                    WHERE batch_time = %s AND movie_id IN %s
-                """, (batch_time, tuple(top5_ids)))
+                    WHERE run_id = %s AND batch_time = %s AND movie_id IN %s
+                """, (run_id, batch_time, tuple(top5_ids)))
                 rows = {row[0]: row[1] for row in cursor.fetchall()}
                 for movie_id in top5_ids:
                     title = top5_titles[movie_id]
@@ -127,7 +146,14 @@ def get_latest():
             return jsonify({
                 "times": [str(batch_time) for batch_time in times],
                 "movies": movies_data,
+                "runId": run_id,
             })
+    except MySQLError as exc:
+        return jsonify({
+            "times": [],
+            "movies": {},
+            "error": f"MySQL查询失败: {exc}",
+        })
     finally:
         conn.close()
 

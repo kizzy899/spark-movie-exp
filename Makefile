@@ -11,7 +11,7 @@ include .env
 export
 endif
 
-.PHONY: help setup web check routes task1 task3-split task3-stream task3-feed
+.PHONY: help setup web check routes task1 task3-clean task3-split task3-stream task3-feed
 
 help:
 	@printf "常用命令：\n"
@@ -21,6 +21,7 @@ help:
 	@printf "  make check         编译检查主要 Python 文件\n"
 	@printf "  make routes        打印 Flask 路由，需要先安装依赖\n"
 	@printf "  make task1         重新生成任务一 Top20 结果，可用 MOVIE_DATA_DIR 指定数据目录\n"
+	@printf "  make task3-clean   清理任务三本地运行目录\n"
 	@printf "  make task3-split   切分任务三评分批次文件\n"
 	@printf "  make task3-stream  启动任务三 Spark Streaming\n"
 	@printf "  make task3-feed    投递任务三评分批次文件\n"
@@ -45,6 +46,10 @@ routes:
 
 task1:
 	$(PYTHON) src/task1_rdd_top20/task1_top20.py
+
+task3-clean:
+	test -n "$(MOVIE_STREAMING_DIR)"
+	rm -rf "$(MOVIE_STREAMING_DIR)"
 
 task3-split:
 	$(PYTHON) src/task3_streaming/split_data.py

@@ -31,6 +31,11 @@
         const colors = ['#ff7c7c', '#7ec8e3', '#a8e6cf', '#ffd93d', '#c3b1e1'];
 
         function buildOption(data) {
+            const values = Object.values(data.movies).flat().filter(value => value !== null);
+            const minValue = values.length ? Math.min(...values) : 0;
+            const maxValue = values.length ? Math.max(...values) : 5;
+            const padding = Math.max((maxValue - minValue) * 0.2, 0.05);
+
             return {
                 backgroundColor: '#0d1117',
                 tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' } },
@@ -45,8 +50,8 @@
                 yAxis: {
                     type: 'value',
                     name: '平均评分',
-                    min: 0,
-                    max: 5,
+                    min: Math.max(0, Math.floor((minValue - padding) * 100) / 100),
+                    max: Math.min(5, Math.ceil((maxValue + padding) * 100) / 100),
                     nameTextStyle: { color: '#8b949e' },
                     axisLabel: { color: '#8b949e' },
                     splitLine: { lineStyle: { color: '#21262d' } }
@@ -69,6 +74,10 @@
             try {
                 const response = await fetch('/api/latest');
                 const data = await response.json();
+                if (data.error) {
+                    status.textContent = data.error;
+                    return;
+                }
                 if (!data.times || data.times.length === 0) {
                     status.textContent = '暂无数据，等待 Spark Streaming 写入 MySQL...';
                     return;
