@@ -59,10 +59,16 @@ GET /api/latest        读取任务三 MySQL 实时统计结果
 
 ## 快速启动 Web
 
-根目录已提供 `Makefile`。第一次运行先安装依赖：
+推荐使用 Java 8 和 Python 3.11。根目录已提供 `Makefile`，第一次运行先安装依赖：
 
 ```bash
 make setup
+```
+
+复制环境变量示例文件，并按本机数据路径修改：
+
+```bash
+cp .env.example .env
 ```
 
 启动统一 Web 服务：
@@ -112,11 +118,31 @@ src/task1_rdd_top20/index.html
 src/task1_rdd_top20/top20_output.json
 ```
 
-如需重新生成结果，先确认 `task1_top20.py` 中的数据路径，再运行：
+如需重新生成结果，默认读取：
+
+```text
+/Users/elemen/Downloads/moviedata-latest
+```
+
+推荐复制 `.env.example` 为 `.env` 后修改 `MOVIE_DATA_DIR`：
 
 ```bash
-python3 src/task1_rdd_top20/task1_top20.py
+cp .env.example .env
 ```
+
+也可以在命令行临时指定：
+
+```bash
+MOVIE_DATA_DIR=/Users/elemen/Downloads/moviedata-latest make task1
+```
+
+任务一结果会写入：
+
+```text
+src/task1_rdd_top20/top20_output.json
+```
+
+统一 Web 页面 `/task1` 会读取同一个文件。
 
 ## 任务二：Spark SQL 男女标签偏好
 

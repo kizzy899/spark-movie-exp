@@ -27,8 +27,22 @@ http://localhost:5001/task1
 
 ## 重新生成结果
 
-运行前先检查 `task1_top20.py` 中的 `BASE_DIR` 是否指向本机数据路径。
+默认读取数据目录：
+
+```text
+/Users/elemen/Downloads/moviedata-latest
+```
+
+推荐在项目根目录复制环境变量文件：
 
 ```bash
-python3 src/task1_rdd_top20/task1_top20.py
+cp .env.example .env
 ```
+
+然后修改 `.env` 中的 `MOVIE_DATA_DIR`，再运行：
+
+```bash
+make task1
+```
+
+结果会写入本目录的 `top20_output.json`，统一 Web 页面 `/task1` 会读取该文件。

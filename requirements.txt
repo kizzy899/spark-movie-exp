@@ -2,4 +2,4 @@ flask
 flask-cors
 pymysql
 pandas
-pyspark
+pyspark<4

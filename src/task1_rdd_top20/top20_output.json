@@ -41,14 +41,14 @@
     {
       "rank": 6,
       "movieId": 8724,
-      "title": "\"Leopard",
+      "title": "Leopard, The (Gattopardo, Il) (1963)",
       "avgRating": 4.42,
       "ratingCount": 12
     },
     {
       "rank": 7,
       "movieId": 318,
-      "title": "\"Shawshank Redemption",
+      "title": "Shawshank Redemption, The (1994)",
       "avgRating": 4.41,
       "ratingCount": 3692
     },
@@ -69,21 +69,21 @@
     {
       "rank": 10,
       "movieId": 6985,
-      "title": "\"Passion of Joan of Arc",
+      "title": "Passion of Joan of Arc, The (Passion de Jeanne d'Arc, La) (1928)",
       "avgRating": 4.35,
       "ratingCount": 36
     },
     {
       "rank": 11,
       "movieId": 25805,
-      "title": "\"Atalante",
+      "title": "Atalante, L' (1934)",
       "avgRating": 4.34,
       "ratingCount": 19
     },
     {
       "rank": 12,
       "movieId": 858,
-      "title": "\"Godfather",
+      "title": "Godfather, The (1972)",
       "avgRating": 4.33,
       "ratingCount": 2325
     },
@@ -118,7 +118,7 @@
     {
       "rank": 17,
       "movieId": 93040,
-      "title": "\"Civil War",
+      "title": "Civil War, The (1990)",
       "avgRating": 4.32,
       "ratingCount": 17
     },
@@ -132,14 +132,14 @@
     {
       "rank": 19,
       "movieId": 4783,
-      "title": "\"Endurance: Shackleton's Legendary Antarctic Expedition",
+      "title": "Endurance: Shackleton's Legendary Antarctic Expedition, The (2000)",
       "avgRating": 4.32,
       "ratingCount": 25
     },
     {
       "rank": 20,
       "movieId": 27033,
-      "title": "\"Kingdom II",
+      "title": "Kingdom II, The (Riget II) (1997)",
       "avgRating": 4.32,
       "ratingCount": 11
     }
