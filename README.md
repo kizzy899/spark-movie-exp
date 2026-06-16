@@ -1,120 +1,253 @@
 # spark-movie-exp
 
-基于 MovieLens 开放数据集构建的电影数据离线分析系统。集成 Hadoop 分布式存储、Spark 分布式计算（RDD / SQL / Streaming）、MySQL 数据库与 ECharts 可视化，实现电影数据的存储、处理、分析和结果展示全流程。
+基于 MovieLens 数据集的 Spark 电影数据分析实验项目。项目目标是整合 Linux、Hadoop、Spark、MySQL、ECharts 和 Web 页面，完成三个数据分析展示任务。
 
----
+## 当前开发方向
 
-## 项目结构
+本仓库采用轻量 Web 结构：
 
-`	ext
-spark-movie-exp/
-├── plans/                    # 项目规划文档
-│   ├── 0-项目概述与目标.md          # 顶层规划：目标、技术栈、分工、交付物
-│   ├── 1-任务一：基于RDD的电影评价Top20分析.md    # 任务一详细设计
-│   ├── 2-任务二：Spark SQL男女标签偏好柱状图.md   # 任务二详细设计
-│   ├── 3-任务三：Spark Streaming实时折线图.md     # 任务三详细设计
-│   └── Task_breakdown_旧版.md      # 原始任务分解文档（归档）
-├── docs/
-│   └── plans/
-│       ├── moviedata-latest.rar      # MovieLens 原始数据集
-│       ├── Spark考核目标.docx         # 课程考核说明
-│       ├── 附件1-基于Spark的电影数据离线分析系统.docx  # 功能要求附件
-│       └── 总结报告模板.docx           # 课程报告模板
-├── tmp-extract/              # 临时解压目录
-├── .gitignore
-└── README.md
-`
+```text
+首页
+├── 任务一：Top20 高分电影表格
+├── 任务二：男女标签偏好柱状图
+└── 任务三：实时评分折线图
+```
 
----
+统一 Web 入口为根目录的 `app.py`，使用 Flask 提供页面路由和 JSON 接口。
 
-## 三大功能任务
+## 功能状态
 
-| 任务       | 技术栈                      | 核心功能                                                     |
-| ---------- | --------------------------- | ------------------------------------------------------------ |
-| **任务一** | Spark RDD + HDFS            | 读取评分数据 -> RDD过滤 -> 按平均评分排序 -> Top20 影片 -> Web表格展示 |
-| **任务二** | Spark SQL + MySQL + ECharts | 数据导入MySQL -> Spark SQL按标签统计男女关注 -> 双柱并列柱状图展示 |
-| **任务三** | Spark Streaming + ECharts   | 监控HDFS目录 -> Spark Streaming增量更新 -> 实时Top5 -> 折线图动态更新 |
+| 模块 | 要求 | 当前状态 |
+| --- | --- | --- |
+| 任务一 | Spark RDD 计算电影平均分，输出 Top20 并页面展示 | 已有 Spark 脚本、JSON 结果和统一页面 |
+| 任务二 | Spark SQL 访问 MySQL，统计男女关注最多的电影标签并柱状图展示 | 页面和接口占位已建，等待 Spark SQL 结果接入 |
+| 任务三 | Spark Streaming 动态接收评分文件，折线图实时展示 | 已有 Streaming 脚本、投递脚本和统一页面 |
 
-### 任务一 — 基于 RDD 的电影评价 Top20 分析
+## 主要目录
 
-- 使用 sc.textFile 读取 HDFS 中的 ratings.csv
-- educeByKey 按 movieId 聚合，计算平均评分
-- 过滤评分人数 >= 10 的电影
-- join movies.csv 获取电影名称，sortBy 降序，	ake(20)
-- Web 后端提供 JSON API，前端表格展示（排名、电影名、平均分、评分人数）
-- 详细设计见 [plans/1-任务一：基于RDD的电影评价Top20分析.md](plans/1-任务一：基于RDD的电影评价Top20分析.md)
+```text
+.
+├── app.py                         # 统一 Flask Web 入口
+├── templates/                     # 首页和三个任务页面
+├── src/
+│   ├── task1_rdd_top20/            # 任务一 RDD Top20 代码和旧版页面
+│   ├── task2_sql_gender_tags/      # 任务二 Spark SQL 代码预留目录
+│   └── task3_streaming/            # 任务三 Streaming 脚本和旧版页面
+├── outputs/                        # Spark 结果输出，供 Web 读取
+├── docs/plans/                     # 实验要求、任务拆解和报告模板
+└── requirements.txt                # Python 依赖
+```
 
-### 任务二 — Spark SQL 男女标签偏好柱状图
+## Web 页面路由
 
-- 将 ratings、users、tags 数据导入 MySQL
-- Spark SQL 通过 JDBC 读取 MySQL，按 gender + tag 分组统计
-- 分别输出男/女关注人数最多的 Top10 标签
-- ECharts 双柱并列柱状图展示（男蓝女红）
-- 详细设计见 [plans/2-任务二：Spark SQL男女标签偏好柱状图.md](plans/2-任务二：Spark SQL男女标签偏好柱状图.md)
+启动统一 Web 服务后访问：
 
-### 任务三 — Spark Streaming 实时折线图
+```text
+http://localhost:5001/        首页
+http://localhost:5001/task1   任务一 Top20 表格
+http://localhost:5001/task2   任务二 男女标签柱状图
+http://localhost:5001/task3   任务三 实时折线图
+```
 
-- Spark Streaming 	extFileStream 监控 HDFS 目录（batch = 10s）
-- updateStateByKey 增量更新各电影评分状态
-- 实时计算 Top5 写入 MySQL
-- 模拟脚本分批投放评分文件
-- ECharts 折线图实时显示 Top5 评分随时间变化
-- 详细设计见 [plans/3-任务三：Spark Streaming实时折线图.md](plans/3-任务三：Spark Streaming实时折线图.md)
+对应接口：
 
----
+```text
+GET /api/top20         读取任务一 Top20 JSON
+GET /api/gender-tags   任务二标签偏好数据，当前为示例数据
+GET /api/latest        读取任务三 MySQL 实时统计结果
+```
 
-## 技术栈
+## 快速启动 Web
 
-| 层次       | 技术                                          |
-| ---------- | --------------------------------------------- |
-| 操作系统   | Linux（CentOS 7 / Ubuntu 18.04+）             |
-| 分布式存储 | Hadoop HDFS                                   |
-| 分布式计算 | Spark (RDD / SQL / Streaming)                 |
-| 关系数据库 | MySQL 5.7+ / 8.0                              |
-| 前端可视化 | ECharts                                       |
-| Web 后端   | JavaEE / Spring Boot / Flask / Node.js 等不限 |
+推荐使用 Java 8 和 Python 3.11。根目录已提供 `Makefile`，第一次运行先安装依赖：
 
----
+```bash
+make setup
+```
 
-## 小组分工（6人）
+复制环境变量示例文件，并按本机数据路径修改：
 
-| 角色             | 职责                                                       |
-| ---------------- | ---------------------------------------------------------- |
-| **组长**         | 项目统筹、架构设计、文档整合、答辩协调、整体测试联调       |
-| **任务一负责人** | RDD数据处理程序、后端接口、Top20 Web页面展示               |
-| **任务二负责人** | Spark SQL分析程序、MySQL表设计与数据导入、ECharts柱状图    |
-| **任务三负责人** | Spark Streaming程序、模拟数据脚本、实时折线图              |
-| **Web全栈**      | Web后端框架搭建、前端整体架构、ECharts可视化集成、接口联调 |
-| **数据库与文档** | MySQL数据库设计（E-R图）、数据导入脚本、课程报告撰写与排版 |
+```bash
+cp .env.example .env
+```
 
----
+启动统一 Web 服务：
 
-## 快速开始（环境搭建概览）
+```bash
+make web
+```
 
-1. **Linux 环境**：安装操作系统，配置 IP、SSH、JDK 1.8+
-2. **Hadoop 集群**：配置 HDFS，启动 NameNode / DataNode，上传数据
-3. **Spark 部署**：配置 spark-env.sh，启动 Spark 集群
-4. **MySQL**：安装建库，导入 ratings、users、tags 数据
-5. **Web 框架**：选择后端语言/框架，搭建项目目录，集成 ECharts CDN
+浏览器访问：
 
-各环境的详细搭建步骤和验证方法见 [0-项目概述与目标.md](plans/0-项目概述与目标.md) 第 2 章。
+```text
+http://localhost:5001/
+```
 
----
+常用命令：
 
-## 交付物
+```bash
+make help          # 查看命令列表
+make check         # 编译检查主要 Python 文件
+make routes        # 打印 Flask 路由，需要先安装依赖
+make task1         # 重新生成任务一 Top20 结果
+make task3-split   # 切分任务三评分批次文件
+make task3-stream  # 启动任务三 Spark Streaming
+make task3-feed    # 投递任务三评分批次文件
+```
 
-- **课程总报告**（30页以上）：技术选型 + 架构框图 + 数据库设计 + 各任务实现 + 问题及解决 + 总结
-- **答辩PPT**：每位组员 5 分钟展示
-- **源代码**：所有 Spark 程序（RDD/SQL/Streaming）、Web 后端、前端页面
-- **数据与截图**：处理结果 + 各任务运行截图
-- **截止时间**：2026年6月25日
+如果当前环境不支持 `make`，也可以直接运行：
 
----
+```bash
+python3 app.py
+```
 
-## 注意事项
+## 任务一：RDD Top20
 
-- 截图不可使用教师 PPT 中的图片，必须为实际运行截图
-- users.dat 分隔符为 ::，导入 MySQL 前需转换为 CSV
-- Streaming 需文件原子移动到监控目录（put / mv），不支持原地追加
-- 提前 1 周完成开发，留足时间撰写课程报告
-- 详情参见各子文档中的「常见问题」章节
+相关文件：
+
+```text
+src/task1_rdd_top20/task1_top20.py
+src/task1_rdd_top20/top20_output.json
+src/task1_rdd_top20/web_app.py
+src/task1_rdd_top20/index.html
+```
+
+统一页面 `/task1` 会读取：
+
+```text
+src/task1_rdd_top20/top20_output.json
+```
+
+如需重新生成结果，默认读取：
+
+```text
+/Users/elemen/Downloads/moviedata-latest
+```
+
+推荐复制 `.env.example` 为 `.env` 后修改 `MOVIE_DATA_DIR`：
+
+```bash
+cp .env.example .env
+```
+
+也可以在命令行临时指定：
+
+```bash
+MOVIE_DATA_DIR=/Users/elemen/Downloads/moviedata-latest make task1
+```
+
+任务一结果会写入：
+
+```text
+src/task1_rdd_top20/top20_output.json
+```
+
+统一 Web 页面 `/task1` 会读取同一个文件。
+
+## 任务二：Spark SQL 男女标签偏好
+
+目标流程：
+
+```text
+MovieLens 数据导入 MySQL
+        ↓
+Spark SQL 通过 JDBC 读取 MySQL
+        ↓
+按 gender + tag 统计关注人数
+        ↓
+输出男女标签偏好结果
+        ↓
+页面 /task2 使用 ECharts 柱状图展示
+```
+
+当前 `/task2` 已有页面和 `/api/gender-tags` 接口。正式接入时可以输出 JSON 到：
+
+```text
+outputs/task2_gender_tags.json
+```
+
+建议 JSON 结构：
+
+```json
+{
+  "code": 200,
+  "data": {
+    "status": "real",
+    "message": "Spark SQL 统计结果",
+    "tags": ["Drama", "Comedy", "Action"],
+    "male": [1200, 980, 760],
+    "female": [1100, 860, 690]
+  }
+}
+```
+
+## 任务三：Spark Streaming 折线图
+
+相关文件：
+
+```text
+src/task3_streaming/streaming_job.py
+src/task3_streaming/split_data.py
+src/task3_streaming/feed_data.py
+app.py
+templates/task3.html
+sql/schema.sql
+```
+
+目标流程：
+
+```text
+src/task3_streaming/split_data.py 切分 ratings.csv
+        ↓
+src/task3_streaming/feed_data.py 分批投递评分文件
+        ↓
+src/task3_streaming/streaming_job.py 监听目录，累计统计并写入 MySQL
+        ↓
+/api/latest 读取 streaming_results
+        ↓
+/task3 折线图每 5 秒刷新
+```
+
+任务三依赖 MySQL 数据库 `movie_analysis` 和表 `streaming_results`。运行前在 `.env` 中配置 MySQL 账号、数据目录和 Streaming 工作目录，不需要改代码里的账号密码。
+
+现在推荐在 `.env` 中配置 MySQL 和任务三目录，然后执行：
+
+```bash
+mysql -u root -p < sql/schema.sql
+make task3-clean
+make task3-split
+make task3-stream
+```
+
+另开一个终端投递评分批次：
+
+```bash
+make task3-feed
+```
+
+每次 `make task3-stream` 启动会生成一个 `run_id` 并写入 MySQL，`/api/latest` 只读取最新一次运行的数据，避免误开旧 Streaming 进程时把旧批次混进当前页面。
+
+页面访问：
+
+```text
+http://localhost:5001/task3
+```
+
+## 数据说明
+
+实验数据来自 MovieLens，当前仓库的课程资料位于：
+
+```text
+docs/plans/
+```
+
+本地如已有解压数据，可以先按脚本中的路径配置运行；后续团队可再统一数据目录。
+
+## 协作约定
+
+- 修改仓库前先阅读 `AGENT.md` 和 `docs/specs/web-system-spec.md`。
+- 文档类文件放入 `docs/`。
+- Spark 计算代码优先放入 `src/` 下对应任务目录。
+- Web 统一入口优先使用根目录 `app.py`。
+- 三个实验任务都应保留可截图、可答辩演示的页面。
+- 未经明确说明，不要重写、删除、移动或大幅重构他人负责的代码。

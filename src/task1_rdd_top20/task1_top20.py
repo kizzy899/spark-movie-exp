@@ -5,25 +5,45 @@
 """
 
 from pyspark import SparkContext, SparkConf
+import csv
 import json
 import os
 
-# 配置路径（当前使用本地文件）
-# 注意：file:// 协议后面跟的是WSL内的绝对路径
-BASE_DIR = os.path.expanduser("~/spark_experiment/movie_task1/data")
-RATINGS_PATH = f"file://{BASE_DIR}/Ratings.csv"
-MOVIES_PATH = f"file://{BASE_DIR}/Movies.csv"
-OUTPUT_PATH = os.path.expanduser("~/spark_experiment/movie_task1/top20_output.json")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DATA_DIR = "/Users/elemen/Downloads/moviedata-latest"
+OUTPUT_PATH = os.path.join(SCRIPT_DIR, "top20_output.json")
 
 # 最小评分人数阈值
 MIN_RATINGS_COUNT = 10
 
+def get_data_dir():
+    return os.path.expanduser(os.environ.get("MOVIE_DATA_DIR", DEFAULT_DATA_DIR))
+
+def to_spark_file_path(path):
+    return f"file://{path}"
+
+def parse_csv_line(line):
+    return next(csv.reader([line]))
+
+def parse_rating_line(line):
+    fields = parse_csv_line(line)
+    return int(fields[1]), float(fields[2])
+
+def parse_movie_line(line):
+    fields = parse_csv_line(line)
+    return int(fields[0]), fields[1]
+
 def main():
+    data_dir = get_data_dir()
+    ratings_path = to_spark_file_path(os.path.join(data_dir, "Ratings.csv"))
+    movies_path = to_spark_file_path(os.path.join(data_dir, "Movies.csv"))
+
     print("=" * 60)
     print("任务一：Spark RDD 电影Top20分析")
     print("=" * 60)
-    print(f"评分文件: {RATINGS_PATH}")
-    print(f"电影文件: {MOVIES_PATH}")
+    print(f"数据目录: {data_dir}")
+    print(f"评分文件: {ratings_path}")
+    print(f"电影文件: {movies_path}")
     print(f"输出路径: {OUTPUT_PATH}")
     print(f"最小评分人数: {MIN_RATINGS_COUNT}")
     print("=" * 60)
@@ -36,22 +56,20 @@ def main():
     try:
         # 1. 读取评分数据
         print("\n[1/4] 读取评分数据...")
-        raw_ratings = sc.textFile(RATINGS_PATH)
+        raw_ratings = sc.textFile(ratings_path)
         header_ratings = raw_ratings.first()
         ratings = raw_ratings \
             .filter(lambda line: line != header_ratings) \
-            .map(lambda line: line.split(",")) \
-            .map(lambda fields: (int(fields[1]), float(fields[2])))
+            .map(parse_rating_line)
         print(f"        评分数据量: {ratings.count()}")
 
         # 2. 读取电影数据
         print("\n[2/4] 读取电影数据...")
-        raw_movies = sc.textFile(MOVIES_PATH)
+        raw_movies = sc.textFile(movies_path)
         header_movies = raw_movies.first()
         movies = raw_movies \
             .filter(lambda line: line != header_movies) \
-            .map(lambda line: line.split(",")) \
-            .map(lambda fields: (int(fields[0]), fields[1]))
+            .map(parse_movie_line)
         print(f"        电影数据量: {movies.count()}")
 
         # 3. 计算平均分

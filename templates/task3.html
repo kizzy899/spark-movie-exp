@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务三 - 实时评分折线图</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; background: #0d1117; color: #e6edf3; }
+        header { padding: 24px 6%; border-bottom: 1px solid #30363d; }
+        header a { color: #8cc8ff; text-decoration: none; }
+        main { width: min(1120px, 94vw); margin: 24px auto; }
+        #status { margin-bottom: 14px; color: #3fb950; }
+        #chart { width: 100%; height: 540px; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/">返回首页</a>
+        <h1>任务三：Spark Streaming 实时评分折线图</h1>
+    </header>
+
+    <main>
+        <div id="status">等待 Spark Streaming 写入数据...</div>
+        <div id="chart"></div>
+    </main>
+
+    <script>
+        const chart = echarts.init(document.getElementById('chart'));
+        const colors = ['#ff7c7c', '#7ec8e3', '#a8e6cf', '#ffd93d', '#c3b1e1'];
+
+        function buildOption(data) {
+            const values = Object.values(data.movies).flat().filter(value => value !== null);
+            const minValue = values.length ? Math.min(...values) : 0;
+            const maxValue = values.length ? Math.max(...values) : 5;
+            const padding = Math.max((maxValue - minValue) * 0.2, 0.05);
+
+            return {
+                backgroundColor: '#0d1117',
+                tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' } },
+                legend: { data: Object.keys(data.movies), textStyle: { color: '#8b949e' }, top: 8 },
+                grid: { left: 56, right: 28, bottom: 70, top: 70 },
+                xAxis: {
+                    type: 'category',
+                    data: data.times,
+                    axisLabel: { color: '#8b949e', fontSize: 11, rotate: 20 },
+                    axisLine: { lineStyle: { color: '#30363d' } }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '平均评分',
+                    min: Math.max(0, Math.floor((minValue - padding) * 100) / 100),
+                    max: Math.min(5, Math.ceil((maxValue + padding) * 100) / 100),
+                    nameTextStyle: { color: '#8b949e' },
+                    axisLabel: { color: '#8b949e' },
+                    splitLine: { lineStyle: { color: '#21262d' } }
+                },
+                series: Object.entries(data.movies).map(([title, values], index) => ({
+                    name: title,
+                    type: 'line',
+                    smooth: true,
+                    symbolSize: 6,
+                    lineStyle: { width: 2, color: colors[index % colors.length] },
+                    itemStyle: { color: colors[index % colors.length] },
+                    data: values,
+                    connectNulls: true
+                }))
+            };
+        }
+
+        async function update() {
+            const status = document.getElementById('status');
+            try {
+                const response = await fetch('/api/latest');
+                const data = await response.json();
+                if (data.error) {
+                    status.textContent = data.error;
+                    return;
+                }
+                if (!data.times || data.times.length === 0) {
+                    status.textContent = '暂无数据，等待 Spark Streaming 写入 MySQL...';
+                    return;
+                }
+                status.textContent = `最新批次：${data.times[data.times.length - 1]}，共 ${data.times.length} 个批次`;
+                chart.setOption(buildOption(data));
+            } catch (error) {
+                status.textContent = `加载失败：请确认 MySQL 和 streaming_results 表可用。${error.message}`;
+            }
+        }
+
+        update();
+        setInterval(update, 5000);
+        window.addEventListener('resize', () => chart.resize());
+    </script>
+</body>
+</html>

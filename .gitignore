@@ -1,6 +1,9 @@
 *.csv
 *.zip
 .DS_Store
+.env
+.venv/
+.runtime/
 __pycache__/
 *.pyc
 streaming-input/

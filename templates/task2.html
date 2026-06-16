@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务二 - 男女标签偏好</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; background: #f4f7fb; color: #172033; }
+        header { padding: 24px 6%; color: #fff; background: #1f4e79; }
+        header a { color: #dce9f7; text-decoration: none; }
+        main { width: min(1120px, 94vw); margin: 24px auto; }
+        .panel { padding: 22px; border: 1px solid #d9e2ef; border-radius: 8px; background: #fff; }
+        #chart { width: 100%; height: 520px; }
+        #notice { margin-bottom: 14px; color: #7a5b00; line-height: 1.7; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/">返回首页</a>
+        <h1>任务二：男女关注电影标签柱状图</h1>
+    </header>
+
+    <main>
+        <section class="panel">
+            <div id="notice">正在加载任务二数据...</div>
+            <div id="chart"></div>
+        </section>
+    </main>
+
+    <script>
+        const chart = echarts.init(document.getElementById('chart'));
+
+        async function loadGenderTags() {
+            const notice = document.getElementById('notice');
+            try {
+                const response = await fetch('/api/gender-tags');
+                const result = await response.json();
+                if (result.code !== 200) throw new Error(result.message || '接口返回异常');
+
+                const data = result.data;
+                notice.textContent = data.status === 'sample' ? data.message : '已加载 Spark SQL 统计结果';
+
+                chart.setOption({
+                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                    legend: { top: 8 },
+                    grid: { left: 56, right: 28, bottom: 58, top: 60 },
+                    xAxis: { type: 'category', data: data.tags, axisLabel: { interval: 0, rotate: 22 } },
+                    yAxis: { type: 'value', name: '关注人数' },
+                    series: [
+                        { name: '男性', type: 'bar', data: data.male, itemStyle: { color: '#2f75b5' } },
+                        { name: '女性', type: 'bar', data: data.female, itemStyle: { color: '#c0504d' } }
+                    ]
+                });
+            } catch (error) {
+                notice.textContent = `加载失败：${error.message}`;
+            }
+        }
+
+        loadGenderTags();
+        window.addEventListener('resize', () => chart.resize());
+    </script>
+</body>
+</html>
