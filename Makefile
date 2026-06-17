@@ -59,3 +59,24 @@ task3-stream:
 
 task3-feed:
 	$(PYTHON) src/task3_streaming/feed_data.py
+ .PHONY: help setup web check routes task1 task2-import task2 task2-clean test2 test-all task3-clean task3-split task3-stream task3-feed
+ 	@printf "  make task2-import   导入 Users.dat + Ratings.csv 到 MySQL\n"
+ 	@printf "  make task2          运行 Spark SQL 生成性别标签 JSON\n"
+ 	@printf "  make task2-clean    清空 MySQL.users 和 MySQL.ratings 表\n"
+ 	@printf "  make test2          仅运行 task2 单元测试\n"
+ 	@printf "  make test-all       运行所有单元测试\n"
+ task2-import:
+ 	$(PYTHON) src/task2_sql_gender_tags/import_mysql.py
+ 
+ task2:
+ 	$(PYTHON) src/task2_sql_gender_tags/task2_gender_tags.py
+ 
+ task2-clean:
+ 	$(PYTHON) -c "import pymysql; c=pymysql.connect(host='$(MYSQL_HOST)',port=$(MYSQL_PORT),user='$(MYSQL_USER)',password='$(MYSQL_PASSWORD)',database='$(MYSQL_DB)'); cur=c.cursor(); cur.execute('TRUNCATE TABLE users'); cur.execute('TRUNCATE TABLE ratings'); c.commit(); c.close(); print('已清空 users 和 ratings 表')"
+ 
+ test2:
+ 	$(PYTHON) -m pytest tests/test_task2_gender_tags.py -v
+ 
+ test-all:
+ 	$(PYTHON) -m pytest tests/ -v
+ 
