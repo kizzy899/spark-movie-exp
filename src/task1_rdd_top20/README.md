@@ -7,7 +7,6 @@
 ```text
 task1_top20.py       Spark RDD 分析脚本，生成 Top20 结果
 top20_output.json    当前 Web 统一入口读取的结果文件
-web_app.py           旧版任务一独立 Flask 服务，保留作参考
 index.html           旧版任务一独立页面，保留作参考
 ```
 

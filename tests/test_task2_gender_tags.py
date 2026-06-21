@@ -173,6 +173,32 @@ class TestOutputJsonStructure(unittest.TestCase):
         self.assertEqual(output["data"]["message"], "Spark SQL statistic result")
 
 
+class TestSqlDumpInput(unittest.TestCase):
+    '''验证无需数据库即可读取 MySQL dump 中的任务二结果。'''
+
+    def test_parse_normalize_and_merge_duplicate_tags(self):
+        import tempfile
+
+        sql = (
+            'INSERT INTO `gender_tag_stats` VALUES '
+            "('F','Action\\r',12),('F','Action',20),"
+            "('M','Drama',30),('M','(no genres listed)\\r',99);\n"
+        )
+        with tempfile.NamedTemporaryFile(
+            'w', suffix='.sql', delete=False, encoding='utf-8'
+        ) as handle:
+            handle.write(sql)
+            dump_path = handle.name
+        try:
+            rows = task2.read_gender_stats_from_dump(dump_path)
+        finally:
+            Path(dump_path).unlink()
+
+        self.assertIn(('F', 'Action', 20), rows)
+        self.assertIn(('M', 'Drama', 30), rows)
+        self.assertEqual(len(rows), 2)
+
+
 class TestImportUsersDatParsing(unittest.TestCase):
     """TC8: 验证 Users.dat (:: 分隔) 解析"""
 

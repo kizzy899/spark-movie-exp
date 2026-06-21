@@ -108,7 +108,6 @@ python3 app.py
 ```text
 src/task1_rdd_top20/task1_top20.py
 src/task1_rdd_top20/top20_output.json
-src/task1_rdd_top20/web_app.py
 src/task1_rdd_top20/index.html
 ```
 

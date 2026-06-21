@@ -3,16 +3,13 @@
 """
 Task 2: Spark SQL Gender Tag Preferences
 
-Reads MySQL.users + MySQL.ratings (JDBC) and Movies.csv (local file).
-Explodes genres by |, joins, groups by gender+genre, takes top N per gender.
-Outputs JSON with union of tags.
+By default, reads pre-computed results from sql/db_backup.sql.
+Set TASK2_DATA_SOURCE=mysql to use the original Spark JDBC calculation.
 """
 
+import ast
 import json
 import os
-
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, countDistinct, desc, explode, split, trim
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
@@ -20,6 +17,8 @@ PROJECT_DIR = os.path.dirname(BASE_DIR)
 
 OUTPUT_PATH = os.path.join(PROJECT_DIR, "outputs", "task2_gender_tags.json")
 DEFAULT_DATA_DIR = "/Users/elemen/Downloads/moviedata-latest"
+DEFAULT_SQL_DUMP_PATH = os.path.join(PROJECT_DIR, 'sql', 'db_backup.sql')
+DEFAULT_JDBC_JAR_PATH = os.path.join(PROJECT_DIR, "lib", "mysql-connector-j-8.4.0.jar")
 TOP_N = int(os.environ.get("TASK2_TOP_N", "8"))
 
 MYSQL_CONFIG = {
@@ -78,6 +77,80 @@ def get_data_dir():
     return os.path.expanduser(os.environ.get("MOVIE_DATA_DIR", DEFAULT_DATA_DIR))
 
 
+def get_data_source():
+    return os.environ.get('TASK2_DATA_SOURCE', 'sql_dump').strip().lower()
+
+
+def get_sql_dump_path():
+    configured_path = os.path.expanduser(
+        os.environ.get('TASK2_SQL_DUMP', DEFAULT_SQL_DUMP_PATH)
+    )
+    if not os.path.isabs(configured_path):
+        configured_path = os.path.join(PROJECT_DIR, configured_path)
+    return os.path.abspath(configured_path)
+
+
+def read_gender_stats_from_dump(dump_path):
+    '''Read gender_tag_stats values from a MySQL dump without MySQL.'''
+    marker = 'INSERT INTO `gender_tag_stats` VALUES '
+    statement = None
+    with open(dump_path, 'r', encoding='utf-8', errors='replace') as dump_file:
+        for line in dump_file:
+            if line.startswith(marker):
+                statement = line[len(marker):].strip()
+                break
+
+    if statement is None:
+        raise ValueError('gender_tag_stats data was not found in the SQL dump')
+    if statement.endswith(';'):
+        statement = statement[:-1]
+    try:
+        rows = ast.literal_eval('[' + statement + ']')
+    except (SyntaxError, ValueError) as exc:
+        raise ValueError('Unable to parse gender_tag_stats from the SQL dump') from exc
+
+    # The bundled dump contains dirty duplicates such as Action and Action\\r.
+    # Normalize them and retain the larger pre-computed count.
+    normalized = {}
+    for gender, tag, user_count in rows:
+        clean_gender = str(gender).strip().upper()
+        clean_tag = str(tag).strip()
+        if clean_gender not in {'M', 'F'}:
+            continue
+        if not clean_tag or clean_tag.lower() in {
+            '(no genres listed)',
+            '(no genre listed)',
+        }:
+            continue
+        key = (clean_gender, clean_tag)
+        normalized[key] = max(normalized.get(key, 0), int(user_count or 0))
+
+    return [
+        (gender, tag, count)
+        for (gender, tag), count in normalized.items()
+    ]
+
+
+def generate_from_sql_dump(dump_path=None):
+    dump_path = dump_path or get_sql_dump_path()
+    if not os.path.isfile(dump_path):
+        raise FileNotFoundError(f'SQL dump not found: {dump_path}')
+    rows = read_gender_stats_from_dump(dump_path)
+    male = [(tag, count) for gender, tag, count in rows if gender == 'M']
+    female = [(tag, count) for gender, tag, count in rows if gender == 'F']
+    tags, male_values, female_values = get_top_n_tags(male, female, TOP_N)
+    return build_output_json(tags, male_values, female_values)
+
+
+def get_jdbc_jar_path():
+    configured_path = os.path.expanduser(
+        os.environ.get("MYSQL_CONNECTOR_JAR", DEFAULT_JDBC_JAR_PATH)
+    )
+    if not os.path.isabs(configured_path):
+        configured_path = os.path.join(PROJECT_DIR, configured_path)
+    return os.path.abspath(configured_path)
+
+
 def get_movies_path():
     return os.path.join(get_data_dir(), "Movies.csv")
 
@@ -111,10 +184,36 @@ def main():
     print("Task 2: Spark SQL Gender Tag Preferences")
     print("=" * 60)
 
+    data_source = get_data_source()
+    print(f'Data source: {data_source}')
+    if data_source == 'sql_dump':
+        dump_path = get_sql_dump_path()
+        print(f'SQL dump: {dump_path}')
+        output = generate_from_sql_dump(dump_path)
+        os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+        with open(OUTPUT_PATH, 'w', encoding='utf-8') as output_file:
+            json.dump(output, output_file, ensure_ascii=False, indent=2)
+        print(f'\nResults written to: {OUTPUT_PATH}')
+        print('Done!')
+        return
+    if data_source != 'mysql':
+        raise ValueError("TASK2_DATA_SOURCE must be 'sql_dump' or 'mysql'")
+
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import col, countDistinct, desc, explode, split, trim
+
+    jdbc_jar_path = get_jdbc_jar_path()
+    if not os.path.isfile(jdbc_jar_path):
+        raise FileNotFoundError(
+            f"MySQL Connector/J not found: {jdbc_jar_path}. "
+            "Set MYSQL_CONNECTOR_JAR to a valid JAR path."
+        )
+
+    print(f"MySQL Connector/J: {jdbc_jar_path}")
     spark = (
         SparkSession.builder.appName("GenderTags")
-        .config("spark.jars", "mysql-connector-java-x.x.x.jar")
-        .config("spark.driver.extraClassPath", "mysql-connector-java-x.x.x.jar")
+        .config("spark.jars", jdbc_jar_path)
+        .config("spark.driver.extraClassPath", jdbc_jar_path)
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
